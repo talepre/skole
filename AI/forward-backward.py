@@ -1,56 +1,70 @@
-def forward_backward(evidence, prior):
-	forward_vector = [0,0,0]
-	backward_message = [0,0,0]
-	smooth_vector = [0,0,0]
-	
-	forward_vector[0] = prior;
-	for t in range(1,len(smooth_vector)):
-		forward_vector[1] = forward(forward_vector(t-1),evidence[t])
+from numpy import matrix, dot, transpose, multiply
+
+#Variables known from the book
+observation_model = [matrix('0.1 0; 0 0.8'), matrix('0.9 0; 0 0.2')]
+transition_model = matrix('0.7 0.3; 0.3 0.7')
+start_belief = matrix('0.5; 0.5')
+backward_belief = matrix('1.0; 1.0')
+
+def forward_backward(evidence):
+    #Start by adding what we know
+    fw_messages = [start_belief]
+    bw_messages = [backward_belief]
+    prior_fw = start_belief
+    prior_bw = backward_belief
+    #Loop to go through all the evidence
+    for evidence_day in evidence:
+        #Running forwardpart and appending to fw_messages
+        prior_fw = forward(prior_fw, evidence_day)
+        fw_messages.append(prior_fw)
+        #Running backwardpart and appending to bw_messages
+        prior_bw = backward(prior_bw, evidence_day)
+        bw_messages.append(prior_bw)
+    #Smoothing based on fw_messages and reversed bw_messages
+    for i in range(len(fw_messages)):
+        print normalize(smoothing(fw_messages[i],bw_messages[len(bw_messages)-i-1]))
+
+#Backward part, dot product between transition model transposed, observation model based on evidence and prior belief
+def backward(prior, evidence):
+    evidence_based = dot(transition_model.getT(),observation_model[evidence])
+    return normalize(dot(evidence_based, prior))
+
+#Forward part, dot product between transition model, observation model based on evidence and prior belief
+def forward(prior, evidence):
+    probability = dot(transition_model,prior)
+    return normalize(dot(observation_model[evidence],probability))
+
+#Normalize matrixes
+def normalize(evidence_based):
+    return evidence_based/sum(evidence_based)
+
+#Smooth matrixes by multiplying
+def smoothing(fw_message, bw_message):
+    return (multiply(fw_message,bw_message))
+
+#Testing only forward part for task B
+def forward_testing(evidence):
+    prior = start_belief
+    for evidence_day in evidence:
+            print prior
+            prior = forward(prior, evidence_day)
+    return prior
+
+#Evidence when umbrella appeard both days, 1=True
+evidence1 = [1,1]
+#Evidence for five days, 1=True, 0=False
+evidence2 = [1,1,0,1,1]
+
+print 'Part B1:'
+print forward_testing(evidence1)
+
+print 'Part B2'
+print forward_testing(evidence2)
+
+print 'Part C1'
+forward_backward(evidence1)
+
+print 'Part C2'
+forward_backward(evidence2)
 
 
-
-	return smooth_vector
-
-def forward():
-	
-
-
-
-'''
-function FORWARD-BACKWARD(ev, prior ) returns a vector of probability distributions
-inputs: ev, a vector of evidence values for steps 1,...,t
-prior , the prior distribution on the initial state, P(X0)
-local variables: fv, a vector of forward messages for steps 0,...,t
-b, a representation of the backward message, initially all 1s
-sv, a vector of smoothed estimates for steps 1,...,t
-fv[0] ← prior
-for i = 1 to t do
-fv[i] ← FORWARD(fv[i − 1], ev[i])
-for i = t downto 1 do
-sv[i] ← NORMALIZE(fv[i] × b)
-b← BACKWARD(b, ev[i])
-return sv
-'''
-
-'''
-function FIXED-LAG-SMOOTHING(et, hmm, d) returns a distribution over Xt−d
-inputs: et, the current evidence for time step t
-hmm, a hidden Markov model with S × S transition matrix T
-d, the length of the lag for smoothing
-persistent: t, the current time, initially 1
-f, the forward message P(Xt|e1:t), initially hmm.PRIOR
-B, the d-step backward transformation matrix, initially the identity matrix
-et−d:t, double-ended list of evidence from t − d to t, initially empty
-local variables: Ot−d, Ot, diagonal matrices containing the sensor model information
-add et to the end of et−d:t
-Ot ← diagonal matrix containing P(et|Xt)
-if t>d then
-f← FORWARD(f, et)
-remove et−d−1 from the beginning of et−d:t
-Ot−d ← diagonal matrix containing P(et−d|Xt−d)
-B← O−1
-t−dT−1BTOt
-else B← BTOt
-t ← t + 1
-if t>d then return NORMALIZE(f × B1) else return null
-'''
