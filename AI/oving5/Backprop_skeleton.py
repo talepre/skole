@@ -102,7 +102,9 @@ class NN: #Neural Network
         #Step 6 in exercise
         for i in range(self.numInputs):
             for j in range(self.numInputs):
-                self.weightsInput[i][j] = 
+                self.weightsInput[i][j] += self.learningRate*(self.prevDeltaHidden[j]*self.prevInputActivations[i]-self.deltaHidden[j]*self.inputActivation[i])
+        for i in xrange(self.numHidden):
+            self.weightsOutput[i] += self.learningRate*(self.prevHiddenActivations[i]*self.prevDeltaOutput-self.hiddenActivations[i]*self.deltaOutput)    
 
     def backpropagate(self):
         self.computeOutputDelta()
