@@ -1,6 +1,8 @@
+from __future__ import division
 import math
 import random
 import copy
+
 
 #The transfer function of neurons, g(x)
 def logFunc(x):
@@ -87,8 +89,8 @@ class NN: #Neural Network
     def computeOutputDelta(self):
         #step 1-3 in excercise
         probability = logFunc(self.prevOutputActivation-self.outputActivation)
-        self.prevDeltaOutput = logFuncDerivative(self.prevOutputActivation)*(1-probability)
-        self.deltaOutput = logFuncDerivative(self.outputActivation)*(1-probability)
+        self.prevDeltaOutput = logFuncDerivative(self.prevOutputActivation)*(1.0-probability)
+        self.deltaOutput = logFuncDerivative(self.outputActivation)*(1.0-probability)
         
 
     def computeHiddenDelta(self):
@@ -101,9 +103,9 @@ class NN: #Neural Network
     def updateWeights(self):
         #Step 6 in exercise
         for i in range(self.numInputs):
-            for j in range(self.numInputs):
+            for j in range(self.numHidden):
                 self.weightsInput[i][j] += self.learningRate*(self.prevDeltaHidden[j]*self.prevInputActivations[i]-self.deltaHidden[j]*self.inputActivation[i])
-        for i in xrange(self.numHidden):
+        for i in range(self.numHidden):
             self.weightsOutput[i] += self.learningRate*(self.prevHiddenActivations[i]*self.prevDeltaOutput-self.hiddenActivations[i]*self.deltaOutput)    
 
     def backpropagate(self):
@@ -124,10 +126,13 @@ class NN: #Neural Network
         #TODO: Train the network on all patterns for a number of iterations.
         #To measure performance each iteration: Run for 1 iteration, then count misordered pairs.
         #TODO: Training is done  like this (details in exercise text):
-        #-Propagate A
-        #-Propagate B
-
-        #-Backpropagate
+        
+        for pair in patterns:
+            a = pair[0]
+            b = pair[1]
+            self.propagate(a.features)
+            self.propagate(b.features)
+            self.backpropagate()
 
     def countMisorderedPairs(self, patterns):
         #TODO: Let the network classify all pairs of patterns. The highest output determines the winner.
@@ -140,4 +145,19 @@ class NN: #Neural Network
         #end of for
         #TODO: Calculate the ratio of correct answers:
         #errorRate = numMisses/(numRight+numMisses)
-        pass
+        numRight = 0
+        numMisses = 0
+        for pair in patterns:
+            a = pair[0]
+            b = pair[1]
+            prop_a = self.propagate(a.features)
+            prop_b = self.propagate(b.features)
+
+            if (prop_a > prop_b) and (a.rating > b.rating):
+                numRight += 1
+            elif (prop_b > prop_a) and (b.rating > a.rating):
+                numRight += 1
+            else:
+                numMisses += 1
+        print "Miss: ", numMisses, "out of: ", len(patterns)
+        return (numMisses/numRight+numMisses)

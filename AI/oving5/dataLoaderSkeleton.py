@@ -1,3 +1,4 @@
+from __future__ import division
 __author__ = 'kaiolae'
 __author__ = 'kaiolae'
 import Backprop_skeleton as Bp
@@ -62,24 +63,43 @@ def runRanker(trainingset, testset):
         dataInstance=dhTraining.dataset[qid] #All data instances (query, features, rating) for query qid
         #TODO: Store the training instances into the trainingPatterns array. Remember to store them as pairs, where the first item is rated higher than the second.
         #TODO: Hint: A good first step to get the pair ordering right, is to sort the instances based on their rating for this query. (sort by x.rating for each x in dataInstance)
+        for i in dataInstance:
+            for j in dataInstance:
+                if i.rating > j.rating:
+                    trainingPatterns.append((i,j))
+                elif j.rating > i.rating: 
+                    trainingPatterns.append((j,i))
+
 
     for qid in dhTesting.dataset.keys():
         #This iterates through every query ID in our test set
         dataInstance=dhTesting.dataset[qid]
+
         #TODO: Store the test instances into the testPatterns array, once again as pairs.
         #TODO: Hint: The testing will be easier for you if you also now order the pairs - it will make it easy to see if the ANN agrees with your ordering.
+        for i in dataInstance:
+            for j in dataInstance:
+                if i.rating > j.rating:
+                    testPatterns.append((i,j))
+                elif j.rating > i.rating: 
+                    testPatterns.append((j,i))
+        
+        
 
     #Check ANN performance before training
-    nn.countMisorderedPairs(testPatterns)
+    train_res = nn.countMisorderedPairs(trainingPatterns)
+    test_res = nn.countMisorderedPairs(testPatterns)
+    print ('Before training, Training: '+str(train_res)+' , Test: ' + str(test_res))
     for i in range(25):
         #Running 25 iterations, measuring testing performance after each round of training.
         #Training
         nn.train(trainingPatterns,iterations=1)
         #Check ANN performance after training.
-        nn.countMisorderedPairs(testPatterns)
-
+        train_res = nn.countMisorderedPairs(trainingPatterns)
+        test_res = nn.countMisorderedPairs(testPatterns)
+        print ('Iteration '+str(i)+', Training: '+str(train_res)+' , Test: ' + str(test_res))
     #TODO: Store the data returned by countMisorderedPairs and plot it, showing how training and testing errors develop.
 
 
 
-runRanker("train.txt","test.txt")
+runRanker("datasets/train.txt","datasets/test.txt")
